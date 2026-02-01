@@ -15,7 +15,7 @@ Core outcomes: (1) reliable field extraction, (2) searchable knowledge base, (3)
 - Audit trail: immutable log of uploads, extraction runs, corrections, and exports (who/when/what changed).
 
 ## Architecture and Azure services
-- Frontend: Angular (portal, upload, validation grid, chat UI).  
+- Frontend: React (portal, upload, validation grid, chat UI).  
 - Core API: ASP.NET Core (.NET) REST API for auth, tenants, billing, document metadata, exports.  
 - Storage: Azure Blob Storage for raw files + derived artifacts (OCR text, JSON extraction results).  
 - Async pipeline: Azure Service Bus queue + Azure Functions workers (or WebJobs) for “upload → extract → index → notify”, using Service Bus queue triggers for reliable background processing. [learn.microsoft](https://learn.microsoft.com/en-us/azure/azure-functions/functions-bindings-service-bus-trigger)

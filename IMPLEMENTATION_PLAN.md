@@ -4,7 +4,7 @@
 Build a multi-tenant web app that lets UAE SMEs upload invoices, extract key data, search documents, and ask questions about them using AI.
 
 **Target Timeline:** 2-4 weeks for MVP  
-**Tech Stack:** Angular (frontend) + ASP.NET Core (backend) + Azure Services
+**Tech Stack:** React (frontend) + ASP.NET Core (backend) + Azure Services
 
 ---
 
