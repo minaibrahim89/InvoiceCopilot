@@ -17,10 +17,26 @@ workspace "Invoice Copilot" "A tool that extracts data from uploaded invoices us
         azureApplicationInsights = softwareSystem "Azure Application Insights" "Application performance management service for monitoring live applications."
 
         invoiceCopilot = softwareSystem "Invoice Copilot" "A tool that extracts data from uploaded invoices using AI." {
-            # wa = container "Web Application"
-            # db = container "Database Schema" {
-            #     tags "Database"
-            # }
+            wa = container "Web Application" "A web application that allows users to upload invoices and view extracted data." {
+                technology "React (frontend), ASP.NET Core (backend)"
+                tags "WebApp"
+            }
+            db = container "Database" "Stores user data and extracted invoice information." {
+                technology "Azure SQL Database"
+                tags "Database"
+            }
+            messageQueue = container "Message Queue" "Handles communication between the web application and background processing services." {
+                technology "Azure Service Bus"
+                tags "MessageQueue"
+            }
+            processingFunction = container "Processing Function" "Background service that processes uploaded invoices using AI services." {
+                technology "Azure Functions"
+                tags "Function"
+            }
+            blobStorage = container "Blob Storage" "Stores the uploaded invoice files." {
+                technology "Azure Blob Storage"
+                tags "BlobStorage"
+            }
         }
 
         # u -> ss.wa "Uses"
