@@ -26,7 +26,7 @@ Core outcomes: (1) reliable field extraction, (2) searchable knowledge base, (3)
 - Observability: Application Insights + structured logging; per-tenant metrics (docs processed, avg latency, cost estimate).
 
 ## Data model and APIs (minimum)
-Tables (Azure SQL / SQL Server):
+Tables (Azure Database for PostgreSQL):
 - Tenants(TenantId, Name, Plan, CreatedAt)  
 - Users(UserId, TenantId, Email, Role, PasswordHash/EntraId)  
 - Documents(DocumentId, TenantId, BlobUri, FileHash, Type, Status, UploadedBy, UploadedAt)  

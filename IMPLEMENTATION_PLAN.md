@@ -12,7 +12,7 @@ Build a multi-tenant web app that lets UAE SMEs upload invoices, extract key dat
 
 ### A. Infrastructure & Azure Services Setup
 - [ ] Create Azure resource group for the project
-- [ ] Set up Azure SQL Database (or SQL Server) for tenant/user/document data
+- [ ] Set up Azure Database for PostgreSQL for tenant/user/document data
 - [ ] Create Azure Blob Storage account for document files
 - [ ] Set up Azure Service Bus (queue for async processing)
 - [ ] Create Azure Functions project or WebJobs for workers
@@ -38,7 +38,7 @@ Build a multi-tenant web app that lets UAE SMEs upload invoices, extract key dat
   - `LineItems` (LineItemId, DocumentId, Description, Qty, UnitPrice, Amount)
   - `AuditEvents` (EventId, TenantId, UserId, DocumentId, EventType, EventDataJson, CreatedAt)
 - [ ] Create indexes for performance (TenantId, DocumentId, Status)
-- [ ] Apply migrations to Azure SQL
+- [ ] Apply migrations to Azure Database for PostgreSQL
 
 ---
 
