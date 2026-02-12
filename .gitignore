@@ -23,6 +23,7 @@ obj/
 *.user
 *.sln.iml
 .idea/
+.aspire/
 
 # OS
 .DS_Store
