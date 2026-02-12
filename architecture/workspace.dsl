@@ -76,6 +76,18 @@ workspace "Invoice Copilot" "A tool that extracts data from uploaded invoices us
                     deploymentNode "Azure Blob Storage" "Hosts the Invoice Copilot blob storage." {
                         containerInstance blobStorage
                     }
+                    deploymentNode "Azure AI Document Intelligence" "Hosts the Invoice Copilot AI document service." {
+                        containerInstance aiDocumentService
+                    }
+                    deploymentNode "Azure OpenAI Service" "Hosts the Invoice Copilot AI chat service." {
+                        containerInstance aiChatService
+                    }
+                    deploymentNode "Azure AI Search" "Hosts the Invoice Copilot AI search service." {
+                        containerInstance aiSearchService
+                    }
+                    deploymentNode "Azure Application Insights" "Hosts the Invoice Copilot application monitoring service." {
+                        containerInstance appMonitoring
+                    }
                 }
             }            
         }
