@@ -15,7 +15,7 @@ workspace "Invoice Copilot" "A tool that extracts data from uploaded invoices us
                 tags "Database"
             }
             messageQueue = container "Message Queue" "Handles communication between the web application and background processing services." {
-                technology "Azure Event Grid"
+                technology "Azure Service Bus"
                 tags "MessageQueue"
             }
             processingFunction = container "Processing Function" "Background service that processes uploaded invoices using AI services." {
