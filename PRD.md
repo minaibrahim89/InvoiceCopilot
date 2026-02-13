@@ -26,22 +26,88 @@ Core outcomes: (1) reliable field extraction, (2) searchable knowledge base, (3)
 - Observability: Application Insights + structured logging; per-tenant metrics (docs processed, avg latency, cost estimate).
 
 ## Data model and APIs (minimum)
-Tables (Azure Database for PostgreSQL):
-- Tenants(TenantId, Name, Plan, CreatedAt)  
-- Users(UserId, TenantId, Email, Role, PasswordHash/EntraId)  
-- Documents(DocumentId, TenantId, BlobUri, FileHash, Type, Status, UploadedBy, UploadedAt)  
-- Extractions(ExtractionId, DocumentId, ModelVersion, RawJsonUri, Confidence, CompletedAt)  
-- InvoiceFields(DocumentId, VendorName, InvoiceNumber, InvoiceDate, Subtotal, Tax, Total, Currency, PaymentStatus, …)  
-- LineItems(LineItemId, DocumentId, Description, Qty, UnitPrice, Amount)  
-- AuditEvents(EventId, TenantId, UserId, DocumentId, EventType, EventDataJson, CreatedAt)
 
-API endpoints:
-- POST /api/documents (upload, returns DocumentId)  
-- GET /api/documents?filters… (list/search metadata)  
-- GET /api/documents/{id} (details + extraction + corrections)  
-- POST /api/documents/{id}/reprocess (enqueue pipeline)  
-- POST /api/chat (question, returns answer + citations + document references)  
-- GET /api/exports/monthly?yyyy-mm=… (download CSV)
+Tables (Azure Database for PostgreSQL)
+
+- Tenants
+  - `TenantId` (uuid, PK): unique tenant identifier for multi-tenancy and FK relationships.
+  - `Name` (varchar(200)): organization/tenant display name.
+  - `Plan` (varchar(50) or enum): subscription tier (free/pro/enterprise).
+  - `CreatedAt` (timestamptz): creation timestamp.
+  - `DeletedAt` (timestamptz, nullable): soft-delete marker (optional).
+
+- Users
+  - `UserId` (uuid, PK): unique user id.
+  - `TenantId` (uuid, FK -> Tenants.TenantId): tenant ownership; used for RLS.
+  - `Email` (varchar(320)): login email, unique per tenant.
+  - `Role` (varchar(20) or enum): `Owner` / `Accountant` / `Viewer` — authorization role.
+  - `PasswordHash` (text, nullable) OR `EntraId` (varchar, nullable): local credential or external identity reference.
+  - `DisplayName` (varchar(200), nullable): UI name.
+  - `CreatedAt` (timestamptz) and `LastLoginAt` (timestamptz, nullable).
+
+- Documents
+  - `DocumentId` (uuid, PK): unique document id.
+  - `TenantId` (uuid, FK): owner tenant.
+  - `BlobUri` (text): canonical blob URL for original file.
+  - `FileHash` (varchar(128)): content hash (e.g., SHA256) for dedupe and integrity.
+  - `Type` (varchar(50) or enum): `invoice` / `receipt` / `contract` / `other`.
+  - `Status` (varchar(30) or enum): `uploaded` / `queued` / `processing` / `extracted` / `failed`.
+  - `UploadedBy` (uuid, FK -> Users.UserId, nullable) and `UploadedAt` (timestamptz).
+  - `Pages` (int, nullable), `TextUri` (text, nullable) for OCR/plaintext, `SizeBytes` (bigint, nullable).
+
+- Extractions
+  - `ExtractionId` (uuid, PK): unique extraction run id.
+  - `DocumentId` (uuid, FK -> Documents.DocumentId).
+  - `ModelVersion` (varchar(100)): model id/version used for extraction.
+  - `RawJsonUri` (text): blob URI to raw extraction JSON (Document Intelligence output).
+  - `Confidence` (numeric(5,4) or real, nullable): overall extraction confidence (0..1).
+  - `CompletedAt` (timestamptz, nullable) and `Status` (enum: `success`/`partial`/`failed`).
+  - `Errors` (jsonb, nullable) and `ProcessedBy` (varchar, nullable).
+
+- InvoiceFields
+  - `DocumentId` (uuid, PK, FK -> Documents.DocumentId): one-to-one for invoice-like docs.
+  - `VendorName` (text, nullable) and `VendorTaxId` (varchar(100), nullable).
+  - `InvoiceNumber` (varchar(100), nullable).
+  - `InvoiceDate` (date or timestamptz, nullable) and `DueDate` (date, nullable).
+  - `Subtotal` / `Tax` / `Total` (numeric(18,2), nullable) and `Currency` (char(3)).
+  - `PaymentStatus` (varchar(20) or enum): `unpaid` / `paid` / `partially_paid` / `overdue`.
+  - `PaymentTerms` (varchar(200), nullable).
+  - `RawConfidence` (jsonb, nullable): per-field confidence scores.
+  - `CorrectedBy` (uuid, nullable) and `CorrectedAt` (timestamptz, nullable) for manual edits.
+
+- LineItems
+  - `LineItemId` (uuid, PK).
+  - `DocumentId` (uuid, FK -> InvoiceFields.DocumentId).
+  - `Description` (text), `Qty` (numeric or int), `UnitPrice` (numeric(18,4)), `Amount` (numeric(18,2)).
+  - `TaxAmount` (numeric(18,2), nullable), `Sequence` (int), `Confidence` (real, nullable).
+
+- AuditEvents
+  - `EventId` (bigserial or uuid, PK): unique audit id.
+  - `TenantId` (uuid, nullable) and `UserId` (uuid, nullable).
+  - `DocumentId` (uuid, nullable).
+  - `EventType` (varchar(100) or enum): e.g., `upload`, `extraction.started`, `extraction.completed`, `correction`, `export.generated`.
+  - `EventDataJson` (jsonb): structured payload (previous values, diff, reason).
+  - `CreatedAt` (timestamptz) and `Immutable` (boolean, default true) for retention.
+
+Notes & constraints
+
+- Use Postgres `uuid` PKs (e.g., `gen_random_uuid()`); consider `jsonb` for flexible AI outputs.
+- Currency/amounts: `numeric(18,2)` for monetary values; store ISO currency in `char(3)`.
+- Indexes: add indexes on `TenantId`, `DocumentId`, `UploadedAt`, and `Status` for queries.
+- Partial indexes for common filters (e.g., unpaid invoices) improve performance.
+- Row-level security (RLS) + application-enforced `TenantId` is recommended for multi-tenancy.
+- Store raw extraction artifacts off-DB (`RawJsonUri`) to keep DB size small; keep `jsonb` extracts only when rich queries are needed.
+- AuditEvents should be append-only; consider immutability and encryption-at-rest for sensitive data.
+
+API endpoints (minimum)
+
+- `POST /api/documents` — Upload a file; returns `DocumentId` and initial `Status`.
+- `GET /api/documents?filters…` — List documents with metadata and filter options (tenant-scoped).
+- `GET /api/documents/{id}` — Document details: metadata, latest `Extraction`, `InvoiceFields`, `LineItems` and correction history.
+- `POST /api/documents/{id}/reprocess` — Enqueue document for re-extraction/re-indexing.
+- `POST /api/chat` — Question payload (user + tenant context); returns answer, citations, and referenced documents.
+- `GET /api/exports/monthly?yyyy-mm=…` — Generate/download CSV or accounting-friendly export for a tenant.
+
 
 ## MVP build order (2–4 weeks)
 1) Upload + blob storage + document status tracking.  
