@@ -50,10 +50,10 @@ Tables (Azure Database for PostgreSQL)
   - `TenantId` (uuid, FK): owner tenant.
   - `BlobUri` (text): canonical blob URL for original file.
   - `FileHash` (varchar(128)): content hash (e.g., SHA256) for dedupe and integrity.
-  - `Type` (varchar(50) or enum): `invoice` / `receipt` / `contract` / `other`.
-  - `Status` (varchar(30) or enum): `uploaded` / `queued` / `processing` / `extracted` / `failed`.
+  - `Type` (varchar(50) or enum): `Invoice` / `Receipt` / `PurchaseOrder` / `Other`.
+  - `Status` (varchar(30) or enum): `Uploaded` / `Queued` / `Processing` / `Extracted` / `Failed`.
   - `UploadedBy` (uuid, FK -> Users.UserId, nullable) and `UploadedAt` (timestamptz).
-  - `Pages` (int, nullable), `TextUri` (text, nullable) for OCR/plaintext, `SizeBytes` (bigint, nullable).
+  - `Pages` (int, nullable), `TextUri` (text, nullable) for OCR/plaintext, `SizeBytes` (bigint, nullable) — size of original file in bytes.
 
 - Extractions
   - `ExtractionId` (uuid, PK): unique extraction run id.
