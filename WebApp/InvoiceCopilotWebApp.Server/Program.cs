@@ -7,7 +7,7 @@ builder.AddServiceDefaults();
 builder.Services.AddProblemDetails();
 
 // Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+builder.Services.AddOpenApi("v1");
 
 var app = builder.Build();
 
@@ -17,6 +17,11 @@ app.UseExceptionHandler();
 if (app.Environment.IsDevelopment())
 {
     app.MapOpenApi();
+    app.UseSwaggerUI(options =>
+    {
+        options.SwaggerEndpoint("/openapi/v1.json", "InvoiceCopilot API v1");
+        options.EnableTryItOutByDefault();
+    });
 }
 
 
